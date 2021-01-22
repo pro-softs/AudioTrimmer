@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:paddingTop="20dp"
     android:paddingBottom="20dp">
-    <com.ojam.audiotrimmer.WaveformSeekBar
+    <com.pro.audiotrimmer.WaveformSeekBar
         android:id="@+id/waveFormView"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -25,7 +25,7 @@
         app:layout_constraintLeft_toLeftOf="@id/slidingWindowView"
         app:layout_constraintRight_toRightOf="@id/slidingWindowView"
         app:layout_constraintTop_toTopOf="@+id/slidingWindowView"/>
-    <com.ojam.audiotrimmer.slidingwindow.SlidingWindowView
+    <com.pro.audiotrimmer.slidingwindow.SlidingWindowView
         android:id="@+id/slidingWindowView"
         android:layout_width="0dp"
         android:layout_height="100dp"
