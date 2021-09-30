@@ -4,9 +4,7 @@ Audio trimming library for Android (No processing)
 This library contains only the UI and logic for the trimmer and not the actual processing of the files . You can use FFmpeg or any other libraries for that.
 
 
-
-![Screenshot_20210930-113440](https://user-images.githubusercontent.com/5465207/135399626-82af3f4e-ae72-4f62-aeda-7c5246d4f660.jpg)
-
+![Screenshot_20210930-113440 (1)](https://user-images.githubusercontent.com/5465207/135402381-2205dc66-3be4-4ff1-b261-e35c8af32911.jpg)
 
 
 A sample app is yet to be added but here is the basic implementation of the trimmer as a view.
