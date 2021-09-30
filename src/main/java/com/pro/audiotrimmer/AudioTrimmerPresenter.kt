@@ -1,7 +1,10 @@
 package com.pro.audiotrimmer
 
+import android.os.Handler
+import android.os.Looper
 import com.pro.audiotrimmer.slidingwindow.SlidingWindowView
 import java.io.File
+import java.util.*
 import kotlin.math.min
 import kotlin.math.roundToLong
 
@@ -41,14 +44,14 @@ internal class AudioTrimmerPresenter : AudioTrimmerContract.Presenter,
         this.view = null
     }
 
-    override fun setSamples(samples: ShortArray) {
-        view?.setAudioSamples(samples)
-    }
-
     /* -------------------------------------------------------------------------------------------*/
     /* Builder */
     override fun setAudio(audio: File) {
         this.audio = audio
+    }
+
+    override fun setAudioSamples(samples: ShortArray) {
+        view?.setAudioSamples(samples)
     }
 
     override fun setMaxDuration(millis: Long) {
@@ -88,6 +91,8 @@ internal class AudioTrimmerPresenter : AudioTrimmerContract.Presenter,
             return
         }
 
+        view?.setStartEndTimer(0, audioLength)
+
         audioWindowLength = min(
             audioLength,
             maxDuration
@@ -100,9 +105,20 @@ internal class AudioTrimmerPresenter : AudioTrimmerContract.Presenter,
         rawProgressMillis = 0L
 
         view?.setupSlidingWindow()
+        view?.setTotalAudioLength(audioWindowLength)
 
         onSelectedRangeChangedListener?.onSelectRangeEnd(rawStartMillis, rawEndMillis)
         onSelectedRangeChangedListener?.onProgressEnd(rawProgressMillis)
+    }
+
+    override fun getStringForTime(timeMs: Long): String? {
+        val totalSeconds = (timeMs + 500) / 1000
+        val seconds = totalSeconds % 60
+        val minutes = totalSeconds / 60 % 60
+        val hours = totalSeconds / 3600
+
+        return if (hours > 0) String.format(Locale.ENGLISH, "%d:%02d:%02d", hours, minutes, seconds)
+        else String.format(Locale.ENGLISH, "%02d:%02d", minutes, seconds)
     }
 
     /* -------------------------------------------------------------------------------------------*/
@@ -119,7 +135,10 @@ internal class AudioTrimmerPresenter : AudioTrimmerContract.Presenter,
             return false
         }
 
-            onSelectedRangeChangedListener?.onSelectRange(rawStartMillis, rawEndMillis)
+        view?.setStartEndTimer(rawStartMillis, rawEndMillis)
+
+
+        onSelectedRangeChangedListener?.onSelectRange(rawStartMillis, rawEndMillis)
 
         return true
     }
@@ -128,6 +147,10 @@ internal class AudioTrimmerPresenter : AudioTrimmerContract.Presenter,
         calculateSelectedArea(left, right)
 
         onSelectedRangeChangedListener?.onSelectRangeEnd(rawStartMillis, rawEndMillis)
+    }
+
+    override fun setInitialStartEndTimer(start: Long, end: Long) {
+        view?.setStartEndTimer(start, end)
     }
 
     override fun onProgressEnd(progress: Float) {

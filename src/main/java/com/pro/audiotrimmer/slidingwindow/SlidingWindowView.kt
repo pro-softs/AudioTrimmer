@@ -1,8 +1,7 @@
 package com.pro.audiotrimmer.slidingwindow
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.MotionEvent.*
@@ -11,6 +10,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.pro.audiotrimmer.dpToPx
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -25,6 +25,24 @@ internal class SlidingWindowView @JvmOverloads constructor(
     private val HOLD_RIGHT_BAR = 1
     private val HOLD_NOTHING = 2
     private val HOLD_THUMB = 3
+
+    private fun getTextFromTime(timeMs: Int): String {
+        val totalSeconds = (timeMs + 500) / 1000
+        val seconds = totalSeconds % 60
+        val minutes = totalSeconds / 60 % 60
+        val hours = totalSeconds / 3600
+        val milli = (timeMs % 1000) / 10
+
+        return if (hours > 0) String.format(
+            Locale.ENGLISH,
+            "%d:%02d:%02d:%02d",
+            hours,
+            minutes,
+            seconds,
+            milli
+        )
+        else String.format(Locale.ENGLISH, "%02d:%02d:%02d", minutes, seconds, milli)
+    }
 
     @DrawableRes
     var leftBarRes: Int = 0
@@ -84,6 +102,8 @@ internal class SlidingWindowView @JvmOverloads constructor(
 
     private val borderPaint: Paint = Paint().apply { isAntiAlias = true }
     private val overlayPaint: Paint = Paint().apply { isAntiAlias = true }
+    private val textPaint: Paint = Paint().apply { isAntiAlias = true }
+    private val textBgPaint: Paint = Paint().apply { isAntiAlias = true }
 
     private var leftBarX = -1f    // Left-Top
     private var rightBarX = -1f   // Left-Top
@@ -92,6 +112,10 @@ internal class SlidingWindowView @JvmOverloads constructor(
     private var leftBarXPercentage = -1f
     private var rightBarXPercentage = -1f
     private var thumbXPercentage = -1f
+
+    private var leftMilli = 0
+    private var rightMilli = 0
+    private var audioWindowLength = 0L
 
     private var hold = HOLD_NOTHING
 
@@ -103,6 +127,11 @@ internal class SlidingWindowView @JvmOverloads constructor(
         this.thumbXPercentage = thumbPercentage
 
         postInvalidate()
+    }
+
+
+    fun setTotalDuration(videoLength: Long) {
+        audioWindowLength = videoLength
     }
 
     fun setThumbPosition(thumbPercentage: Float) {
@@ -158,25 +187,52 @@ internal class SlidingWindowView @JvmOverloads constructor(
         drawLeftBar(canvas)
         drawRightBar(canvas)
         drawOverlay(canvas)
-        drawSliderThumb(canvas)
+
+        if(hold != HOLD_LEFT_BAR && hold != HOLD_RIGHT_BAR)
+            drawSliderThumb(canvas)
     }
 
     private fun drawLeftBar(canvas: Canvas) {
         ContextCompat.getDrawable(context, leftBarRes)?.apply {
-            setBounds(0, dpToPx(context, 20f).roundToInt(), barWidth.roundToInt(), height - dpToPx(context, 20f).roundToInt())
+            setBounds(
+                0, dpToPx(context, 0f).roundToInt(), barWidth.roundToInt(), height
+            )
+
+            textPaint.color = Color.WHITE
+            textPaint.textSize = 30f
+            textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textBgPaint.color = Color.parseColor("#33000000")
 
             canvas.save()
 
             canvas.translate(leftBarX, 0f)
-            draw(canvas)
 
+            if(hold == HOLD_LEFT_BAR) {
+                val leftR = if(leftBarX > dpToPx(context, 27f)) dpToPx(context, -27f) else 0f
+
+                val rect = RectF(
+                    leftR,
+                    dpToPx(context, -30f), dpToPx(context, 55f), dpToPx(context, -5f)
+                )
+
+                canvas.drawRoundRect(rect, 25f, 25f, textBgPaint)
+                val text = getTextFromTime(leftMilli)
+                val textWidth: Float = textPaint.measureText(text)
+
+                canvas.drawText(text, rect.centerX() - (textWidth / 2), rect.centerY()+5, textPaint)
+            }
+
+            draw(canvas)
             canvas.restore()
         }
     }
 
     private fun drawSliderThumb(canvas: Canvas) {
         ContextCompat.getDrawable(context, sliderThumbRes)?.apply {
-            setBounds(0, 0, sliderWidth.roundToInt(), height)
+            setBounds(
+                0, dpToPx(context, -10f).toInt(), sliderWidth.roundToInt(),
+                (height + dpToPx(context, 10f)).roundToInt()
+            )
 
             canvas.save()
 
@@ -189,13 +245,35 @@ internal class SlidingWindowView @JvmOverloads constructor(
 
     private fun drawRightBar(canvas: Canvas) {
         ContextCompat.getDrawable(context, rightBarRes)?.apply {
-            setBounds(0, dpToPx(context, 20f).roundToInt(), barWidth.roundToInt(), height - dpToPx(context, 20f).roundToInt())
+            setBounds(
+                0, dpToPx(context, 0f).roundToInt(), barWidth.roundToInt(), height
+            )
+
+            textPaint.color = Color.WHITE
+            textBgPaint.color = Color.parseColor("#33000000")
 
             canvas.save()
-
             canvas.translate(rightBarX, 0f)
-            draw(canvas)
 
+            if(hold == HOLD_RIGHT_BAR) {
+                val test = ((width - barWidth) - rightBarX > dpToPx(context, 27f))
+
+                val leftR = if(test) dpToPx(context, -27f) else dpToPx(context, -55f)
+                val rightR = if(test) dpToPx(context, 55f) else barWidth
+
+                val rect = RectF(
+                    leftR,
+                    dpToPx(context, -30f), rightR, dpToPx(context, -5f)
+                )
+
+                canvas.drawRoundRect(rect, 25f, 25f, textBgPaint)
+                val text = getTextFromTime(rightMilli)
+                val textWidth: Float = textPaint.measureText(text)
+
+                canvas.drawText(text, rect.centerX() - (textWidth / 2), rect.centerY()+5, textPaint)
+            }
+
+            draw(canvas)
             canvas.restore()
         }
     }
@@ -212,12 +290,12 @@ internal class SlidingWindowView @JvmOverloads constructor(
     }
 
     private fun drawTopBorder(canvas: Canvas, fromX: Float, toX: Float) {
-        val y = dpToPx(context, 20f).roundToInt() + borderWidth / 2f
+        val y = dpToPx(context, 0f).roundToInt() + borderWidth / 2f
         canvas.drawLine(fromX, y, toX, y, borderPaint)
     }
 
     private fun drawBottomBorder(canvas: Canvas, fromX: Float, toX: Float) {
-        val y = height - dpToPx(context, 20f).roundToInt() - (borderWidth / 2f)
+        val y = height - dpToPx(context, 0f).roundToInt() - (borderWidth / 2f)
         canvas.drawLine(fromX, y, toX, y, borderPaint)
     }
 
@@ -228,9 +306,9 @@ internal class SlidingWindowView @JvmOverloads constructor(
         if (leftBarX > barWidth) {
             canvas.drawRect(
                 barWidth,
-                borderWidth,
+                dpToPx(context, 0f).roundToInt().toFloat(),
                 leftBarX,
-                height - dpToPx(context, 20f).roundToInt() - borderWidth,
+                height - dpToPx(context, 0f).roundToInt() - borderWidth,
                 overlayPaint
             )
         }
@@ -239,9 +317,9 @@ internal class SlidingWindowView @JvmOverloads constructor(
         if (rightBarX < width - 2 * barWidth) {
             canvas.drawRect(
                 rightBarX + barWidth,
-                borderWidth,
+                dpToPx(context, 0f).roundToInt().toFloat(),
                 width - barWidth,
-                height - dpToPx(context, 20f).roundToInt() - borderWidth,
+                height - dpToPx(context, 0f).roundToInt() - borderWidth,
                 overlayPaint
             )
         }
@@ -316,8 +394,7 @@ internal class SlidingWindowView @JvmOverloads constructor(
     }
 
     private fun isThumbTouched(x: Float, y: Float): Boolean {
-        return x in (thumbX - extraDragSpace)..(thumbX + sliderWidth + extraDragSpace)
-                && y in 0f..height.toFloat()
+        return !isLeftBarTouched(x, y) && !isRightBarTouched(x, y)
     }
 
     private fun moveLeftBar(x: Float, y: Float) {
@@ -328,6 +405,8 @@ internal class SlidingWindowView @JvmOverloads constructor(
         val percentage = calculateXPercentage(predictedLeftBarX, rightBarX)
         if (listener?.onDragRangeBar(percentage[0], percentage[1]) != false) {
             leftBarX = predictedLeftBarX
+            leftMilli = (percentage[0] * audioWindowLength).toInt()
+
             postInvalidate()
         }
     }
@@ -340,16 +419,18 @@ internal class SlidingWindowView @JvmOverloads constructor(
         val percentage = calculateXPercentage(leftBarX, predictedRightBarX)
         if (listener?.onDragRangeBar(percentage[0], percentage[1]) != false) {
             rightBarX = predictedRightBarX
+            rightMilli = (percentage[1] * audioWindowLength).toInt()
+
             postInvalidate()
         }
     }
 
     private fun moveSlider(x: Float, y: Float) {
         var predictedSliderX = x - (sliderWidth / 2f)
-        predictedSliderX = max(predictedSliderX, leftBarX + barWidth + 1)
-        predictedSliderX = min(predictedSliderX, rightBarX - barWidth - 1)
+        predictedSliderX = max(predictedSliderX, leftBarX + barWidth)
+        predictedSliderX = min(predictedSliderX, rightBarX - barWidth)
 
-        var percentage = calculateThumbXPercentage(predictedSliderX)
+        val percentage = calculateThumbXPercentage(predictedSliderX)
         if (listener?.onDragProgressBar(percentage) != false) {
             thumbX = predictedSliderX
             postInvalidate()

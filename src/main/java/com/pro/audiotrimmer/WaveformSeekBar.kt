@@ -4,15 +4,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import com.pro.audiotrimmer.exception.SampleDataException
 import kotlin.math.abs
 
 class WaveformSeekBar : View {
-
     private var mCanvasWidth = 0
     private var mCanvasHeight = 0
 
@@ -67,9 +64,9 @@ class WaveformSeekBar : View {
 
         super.onDraw(canvas)
         if (sample == null || sample!!.isEmpty())
-            throw SampleDataException()
+            return
 
-        mMaxValue  = sample!!.max()!!
+        mMaxValue  = sample!!.maxOrNull()!!
         val step = (getAvailableWith() / (waveGap+waveWidth))/sample!!.size
 
         var i = 0F
@@ -79,10 +76,6 @@ class WaveformSeekBar : View {
             var waveHeight = getAvailableHeight() * (sample!![i.toInt()].toFloat() / mMaxValue)
             if(waveHeight < waveMinHeight)
                 waveHeight = waveMinHeight
-
-            Log.e("wavehe", waveHeight.toString())
-
-            Log.e("wavehe", mMaxValue.toString())
 
             val top : Float = when(waveGravity){
                 WaveGravity.TOP -> paddingTop.toFloat()
@@ -145,7 +138,7 @@ class WaveformSeekBar : View {
                     updateProgress(event)
             }
             MotionEvent.ACTION_MOVE ->{
-                    updateProgress(event)
+                updateProgress(event)
             }
             MotionEvent.ACTION_UP ->{
                 if (abs(event.x - mTouchDownX) > mScaledTouchSlop)
@@ -211,27 +204,27 @@ class WaveformSeekBar : View {
                 onProgressChanged!!.onProgressChanged(this,progress,false)
         }
 
-    var waveBackgroundColor : Int = Color.LTGRAY
+    var waveBackgroundColor : Int = Color.BLACK
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 
-    var waveProgressColor : Int = Color.WHITE
+    var waveProgressColor : Int = Color.BLACK
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 
     var waveGap : Float = dpToPx(context,2f)
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 
     var waveWidth : Float = dpToPx(context,5f)
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 
@@ -243,13 +236,13 @@ class WaveformSeekBar : View {
 
     var waveCornerRadius : Float = dpToPx(context,2f)
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 
     var waveGravity : WaveGravity = WaveGravity.CENTER
         set(value) {
-          field = value
+            field = value
             invalidate()
         }
 }

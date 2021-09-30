@@ -1,3 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">lib</string>
+    <string name="total" tools:ignore="ExtraTranslation">TOTAL: </string>
 </resources>

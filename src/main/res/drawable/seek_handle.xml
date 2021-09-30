@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="oval">
-            <size android:height="30dp" android:width="30dp" />
-            <solid android:color="#4cffffff" />
+    <item
+        android:gravity="center">
+        <shape android:shape="rectangle">
+            <size android:width="2dp" android:height="80dp"/>
+            <solid android:color="#ffffff" />
+            <corners android:radius="25dp"/>
         </shape>
     </item>
+    <!--
+        <item android:gravity="center_horizontal"
+            android:width="10dp"
+            android:top="0dp"
+            android:height="10dp">
+            <shape android:shape="oval">
+                <solid android:color="#ffffff" />
+            </shape>
+        </item>-->
 </layer-list>

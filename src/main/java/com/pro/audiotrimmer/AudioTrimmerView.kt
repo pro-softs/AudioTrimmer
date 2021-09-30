@@ -3,23 +3,26 @@ package com.pro.audiotrimmer
 import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
+import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.pro.audiotrimmer.databinding.LayoutAudioTrimmerBinding
 import com.pro.audiotrimmer.slidingwindow.SlidingWindowView
-import kotlinx.android.synthetic.main.layout_audio_trimmer.view.*
+
 import java.io.File
 import java.util.*
 import kotlin.math.roundToInt
 
 class AudioTrimmerView @JvmOverloads constructor(
     context: Context,
-    attrs: AttributeSet? = null,
+    val attrs: AttributeSet? = null,
     defStyle: Int = 0
 ) : ConstraintLayout(context, attrs, defStyle), AudioTrimmerContract.View {
 
     private var formatBuilder: java.lang.StringBuilder? = null
     private var formatter: Formatter? = null
+    private var isWavesInit = false
 
     @DrawableRes
     private var leftBarRes: Int = R.drawable.trimmer_left_bar
@@ -33,16 +36,24 @@ class AudioTrimmerView @JvmOverloads constructor(
     private var borderWidth: Float = 0f
 
     @ColorInt
-    private var borderColor: Int = Color.BLACK
+    private var borderColor: Int = Color.parseColor("#222730")
     @ColorInt
     private var overlayColor: Int = Color.argb(120, 183, 191, 207)
 
     private var presenter: AudioTrimmerContract.Presenter? = null
 
+    private lateinit var binding: LayoutAudioTrimmerBinding
+
     /* -------------------------------------------------------------------------------------------*/
     /* Initialize */
     init {
         inflate(context, R.layout.layout_audio_trimmer, this)
+    }
+
+
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        this.binding = LayoutAudioTrimmerBinding.bind(this)
         obtainAttributes(attrs)
         initViews()
     }
@@ -53,36 +64,39 @@ class AudioTrimmerView @JvmOverloads constructor(
         val array = resources.obtainAttributes(attrs, R.styleable.AudioTrimmerView)
         try {
             leftBarRes = array.getResourceId(R.styleable.AudioTrimmerView_atv_window_left_bar, leftBarRes)
-            slidingWindowView.leftBarRes = leftBarRes
+            binding.slidingWindowView.leftBarRes = leftBarRes
 
             rightBarRes = array.getResourceId(R.styleable.AudioTrimmerView_atv_window_right_bar, rightBarRes)
-            slidingWindowView.rightBarRes = rightBarRes
+            binding.slidingWindowView.rightBarRes = rightBarRes
 
             thumbRes = array.getResourceId(R.styleable.AudioTrimmerView_atv_window_thumb, thumbRes)
-            slidingWindowView.sliderThumbRes = thumbRes
+            binding.slidingWindowView.sliderThumbRes = thumbRes
 
             barWidth = array.getDimension(R.styleable.AudioTrimmerView_atv_window_bar_width, barWidth)
-            slidingWindowView.barWidth = barWidth
+            binding.slidingWindowView.barWidth = barWidth
 
             thumbWidth = array.getDimension(R.styleable.AudioTrimmerView_atv_window_bar_width, thumbWidth)
-            slidingWindowView.sliderWidth = thumbWidth
+            binding.slidingWindowView.sliderWidth = thumbWidth
 
             borderWidth = array.getDimension(R.styleable.AudioTrimmerView_atv_window_border_width, borderWidth)
-            slidingWindowView.borderWidth = borderWidth
+            binding.slidingWindowView.borderWidth = borderWidth
 
             borderColor = array.getColor(R.styleable.AudioTrimmerView_atv_window_border_color, borderColor)
-            slidingWindowView.borderColor = borderColor
+            binding.slidingWindowView.borderColor = borderColor
 
             overlayColor = array.getColor(R.styleable.AudioTrimmerView_atv_overlay_color, overlayColor)
-            slidingWindowView.overlayColor = overlayColor
+            binding.slidingWindowView.overlayColor = overlayColor
         } finally {
             array.recycle()
         }
     }
 
     private fun initViews() {
-        waveFormView.sample = shortArrayOf(5, 5)
-        waveFormView.isEnabled = false
+        if(!isWavesInit) {
+            binding.waveFormView.sample = shortArrayOf(5, 5)
+            binding.waveFormView.isEnabled = false
+            isWavesInit = true
+        }
     }
 
     /* -------------------------------------------------------------------------------------------*/
@@ -102,7 +116,7 @@ class AudioTrimmerView @JvmOverloads constructor(
 
     private fun onPresenterCreated() {
         presenter?.let {
-            slidingWindowView.listener = presenter as SlidingWindowView.Listener
+            binding.slidingWindowView.listener = presenter as SlidingWindowView.Listener
         }
     }
 
@@ -110,7 +124,12 @@ class AudioTrimmerView @JvmOverloads constructor(
     /* Public APIs */
     fun setAudio(audio: File): AudioTrimmerView {
         presenter?.setAudio(audio)
+
         return this
+    }
+
+    fun setInitialTimes(start: Long, end: Long) {
+        setStartEndTimer(start, end)
     }
 
     fun setMaxDuration(millis: Long): AudioTrimmerView {
@@ -133,7 +152,7 @@ class AudioTrimmerView @JvmOverloads constructor(
     }
 
     fun setExtraDragSpace(spaceInPx: Float): AudioTrimmerView {
-        slidingWindowView.extraDragSpace = spaceInPx
+        binding.slidingWindowView.extraDragSpace = spaceInPx
         return this
     }
 
@@ -150,18 +169,27 @@ class AudioTrimmerView @JvmOverloads constructor(
     }
 
     override fun setupSlidingWindow() {
-        slidingWindowView.reset()
+        binding.slidingWindowView.reset()
     }
 
     override fun setAudioProgress(progress: Float) {
-        slidingWindowView.setThumbPosition(progress)
+        binding.slidingWindowView.setThumbPosition(progress)
     }
 
     override fun setAudioSamples(samples: ShortArray) {
         for (i in samples.indices) {
-            samples[i] = (samples[i] % dpToPx(context, 50F)).toInt().toShort()
+            samples[i] = (samples[i] % dpToPx(context, 10F)).toInt().toShort()
         }
-        waveFormView.sample = samples;
+        binding.waveFormView.sample = samples
+        isWavesInit = true
+    }
+
+    override fun setTotalAudioLength(videoLength: Long) {
+        binding.slidingWindowView.setTotalDuration(videoLength)
+    }
+
+    override fun setStartEndTimer(left: Long, right: Long) {
+        "${context.getString(R.string.total)} ${presenter?.getStringForTime(right)}".also { binding.endTime.text = it }
     }
 
     /* -------------------------------------------------------------------------------------------*/

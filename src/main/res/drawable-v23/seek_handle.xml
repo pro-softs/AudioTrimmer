@@ -3,17 +3,18 @@
     <item
         android:gravity="center">
         <shape android:shape="rectangle">
-            <size android:width="2dp" android:height="50dp"/>
-            <solid android:color="#4cffffff" />
+            <size android:width="2dp" android:height="80dp"/>
+            <solid android:color="#ffffff" />
+            <corners android:radius="25dp"/>
         </shape>
     </item>
-
-    <item android:gravity="center_horizontal"
-        android:width="10dp"
-        android:top="0dp"
-        android:height="10dp">
-        <shape android:shape="oval">
-            <solid android:color="@color/primary" />
-        </shape>
-    </item>
+    <!--
+        <item android:gravity="center_horizontal"
+            android:width="10dp"
+            android:top="0dp"
+            android:height="10dp">
+            <shape android:shape="oval">
+                <solid android:color="#ffffff" />
+            </shape>
+        </item>-->
 </layer-list>
